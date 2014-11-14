@@ -1,5 +1,3 @@
-#include <boost/program_options.hpp>
-#include <boost/program_options/options_description.hpp>
 #include <iostream>
 #include <map>
 #include <fstream>
@@ -8,9 +6,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/program_options.hpp>
 
 using namespace std;
 using namespace boost;
+using namespace boost::program_options;
+
 
 
 static inline std::string &ltrim(std::string &s) {
@@ -358,32 +359,36 @@ int main(int argc, char** argv) {
     int lda_dim, plda_dim, plda_nb_iter, lw_nb_iter;
     string train, label, test;
 
-    namespace po = boost::program_options;
-
-    po::options_description desc("Allowed options");
+    options_description desc("Allowed options");
     desc.add_options()
         ("help", "produce help message")
-        ("lda_dim", po::value<int>(&lda_dim)->default_value(0), "lda reduction dimension -- if 0 there is no lda reduction")
-        ("plda_dim", po::value<int>(&plda_dim)->default_value(90), "plda reduction dimension")
-        ("plda_nb_iter", po::value<int>(&plda_nb_iter)->default_value(10), "plda number iteration")
-        ("lw_nb_iter", po::value<int>(&lw_nb_iter)->default_value(2), "Length Withened (LW) number iteration -- if 0 there is no lw normalization")
-        ("train", po::value<string>(&train), "training corpus")
-        ("label", po::value<string>(&label), "label corpus")
-        ("test", po::value<string>(&test), "testing corpus")
+        ("lda_dim", value<int>(&lda_dim)->default_value(0), "lda reduction dimension -- if 0 there is no lda reduction")
+        ("plda_dim", value<int>(&plda_dim)->default_value(90), "plda reduction dimension")
+        ("plda_nb_iter", value<int>(&plda_nb_iter)->default_value(10), "plda number iteration")
+        ("lw_nb_iter", value<int>(&lw_nb_iter)->default_value(2), "Length Withened (LW) number iteration -- if 0 there is no lw normalization")
+        ("train", value<string>(&train)->required(), "training corpus")
+        ("label", value<string>(&label)->required(), "label corpus")
+        ("test", value<string>(&test)->required(), "testing corpus")
         ;
 
-    po::positional_options_description p;
+    positional_options_description p;
     p.add("train", 1);
     p.add("label", 1);
     p.add("test", 1);
 
+    variables_map vm;
 
-    po::variables_map vm;
-    po::store(po::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
-    po::notify(vm);    
+    try {
+        store(command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+        notify(vm);    
+    }
+    catch(...) {
+        cout << desc << endl;
+        return 0;
+    }
 
     if (vm.count("help")) {
-        cout << desc << "\n";
+        cout << desc << endl;
         return 0;
     }
 
